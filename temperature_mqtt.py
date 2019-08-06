@@ -1,21 +1,18 @@
 import glob
 import time
 import sys, os
-import keyring
 
 # Import Adafruit IO REST client.
 from Adafruit_IO import Client, RequestError, Feed
 
-# Set to your Adafruit IO username.
-# (go to https://accounts.adafruit.com to find your username)
-#ADAFRUIT_IO_USERNAME = 'furious_einstein'
-ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
-
 # Set to your Adafruit IO key.
 # Remember, your key is a secret,
 # so make sure not to publish it when you publish this code!
-#ADAFRUIT_IO_KEY = keyring.get_password('adafruit', ADAFRUIT_IO_USERNAME)
-ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
+ADAFRUIT_IO_KEY = '1e0009872b9a4028bc9d936525493f0c'
+
+# Set to your Adafruit IO username.
+# (go to https://accounts.adafruit.com to find your username)
+ADAFRUIT_IO_USERNAME = 'furious_einstein'
 
 # Create an instance of the REST client.
 aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
@@ -70,7 +67,7 @@ class Sensor(object):
             temp_c = float(temp_string) / 1000.0
             temp_f = temp_c * 9.0 / 5.0 + 32.0
             #return temp_c, temp_f
-            return round(temp_f,2)
+            return temp_f
 
 #class AirSensor(Sensor):
    #device_id ='28-0316a2791cfb'

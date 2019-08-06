@@ -1,0 +1,2 @@
+export ADAFRUIT_IO_USERNAME=furious_einstein
+export ADAFRUIT_IO_KEY=1e0009872b9a4028bc9d936525493f0c
