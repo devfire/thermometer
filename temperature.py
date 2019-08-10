@@ -5,13 +5,17 @@ import sys, os
 # Import Adafruit IO REST client.
 from Adafruit_IO import MQTTClient, RequestError, Feed
 
+for env_var in ('ADAFRUIT_IO_USERNAME','ADAFRUIT_IO_KEY'):
+    if env_var in os.environ:
+        print("Checking for",env_var,"found it!")
+    else:
+        print(env_var,'not found, exiting!')
+        sys.exit(1)
+
 # Set to your Adafruit IO username.
-# (go to https://accounts.adafruit.com to find your username)
 ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
 
 # Set to your Adafruit IO key.
-# Remember, your key is a secret,
-# so make sure not to publish it when you publish this code!
 ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
 
 # Define callback functions which will be called when certain events happen.
