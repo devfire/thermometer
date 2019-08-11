@@ -18,6 +18,19 @@ def set_credentials():
     ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
 
 
+def create_clients():
+    '''Create an instance of the REST client.
+    this is needed to setup the feeds only.
+    Data is transferred via MQTT, not via REST.
+    '''
+    aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+
+    '''Create an MQTT client instance. This is for sending data'''
+    client = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+
 verify_credentials()
 
 set_credentials()
+
+create_clients()
+
