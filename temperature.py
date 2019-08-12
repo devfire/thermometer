@@ -1,6 +1,7 @@
 import glob
 import time
 import sys, os
+import pprint
 from Adafruit_IO import MQTTClient, Client, RequestError, Feed
 
 def init_adafruit():
@@ -27,6 +28,16 @@ def init_adafruit():
     # Create an MQTT client instance. This is for sending data
     client = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
 
+# Recursive function to find all children of parent class Sensor
+def get_all_subclasses(cls):
+    all_subclasses = []
+
+    for subclass in cls.__subclasses__():
+        all_subclasses.append(subclass)
+        all_subclasses.extend(get_all_subclasses(subclass))
+
+    return all_subclasses
+
 class Sensor(object):
     def __init__(self,feed_names):
         self.feed_names = feed_names
@@ -52,5 +63,10 @@ multi_sensor = MultiSensor(['airtemp','pressure','humidity','gas'])
 
 init_adafruit()
 
-water_sensor.create_feeds()
-multi_sensor.create_feeds()
+#sensors_discovered = get_all_subclasses(Sensor)
+sensors_discovered = []
+sensors_discovered.append(water_sensor)
+sensors_discovered.append(multi_sensor)
+#sensors_discovered = Sensor.__subclasses__()
+for sensor in sensors_discovered:
+    sensor.create_feeds()
