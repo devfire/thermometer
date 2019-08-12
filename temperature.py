@@ -4,39 +4,36 @@ import sys, os
 import pprint
 from Adafruit_IO import MQTTClient, Client, RequestError, Feed
 
-def init_adafruit():
-    # We need to make sure the env vars are set correctly
-    for env_var in ('ADAFRUIT_IO_USERNAME','ADAFRUIT_IO_KEY'):
-        if env_var in os.environ:
-            print("Checking for",env_var,"found it!")
-        else:
-            print(env_var,'not found, exiting!')
-            sys.exit(1)
+class Adafruit(object):
+    def __init__(self):
+        # We need to make sure the env vars are set correctly
+        for env_var in ('ADAFRUIT_IO_USERNAME','ADAFRUIT_IO_KEY'):
+            if env_var in os.environ:
+                print("Checking for",env_var,"found it!")
+            else:
+                print(env_var,'not found, exiting!')
+                sys.exit(1)
 
-    # Set to your Adafruit IO username.
-    ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
+        # Set to your Adafruit IO username.
+        self.ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
 
-    # Set to your Adafruit IO key.
-    ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
+        # Set to your Adafruit IO key.
+        self.ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
 
-    '''Create an instance of the REST client.
-    this is needed to setup the feeds only.
-    Data is transferred via MQTT, not via REST.
-    '''
-    aio = Client(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+        '''
+        Create an instance of the REST client. This is needed to setup the feeds only.
+        Data is transferred via MQTT, not via REST.
+        '''
+        self.http_client = Client(self.ADAFRUIT_IO_USERNAME, self.ADAFRUIT_IO_KEY)
 
-    # Create an MQTT client instance. This is for sending data
-    client = MQTTClient(ADAFRUIT_IO_USERNAME, ADAFRUIT_IO_KEY)
+        # Create an MQTT client instance. This is for sending data
+        self.mqtt_client = MQTTClient(self.ADAFRUIT_IO_USERNAME, self.ADAFRUIT_IO_KEY)
 
-# Recursive function to find all children of parent class Sensor
-def get_all_subclasses(cls):
-    all_subclasses = []
+    def get_http_client():
+        return self.http_client
 
-    for subclass in cls.__subclasses__():
-        all_subclasses.append(subclass)
-        all_subclasses.extend(get_all_subclasses(subclass))
-
-    return all_subclasses
+    def get_mqtt_client():
+        return self.mqtt_client
 
 class Sensor(object):
     def __init__(self,feed_names):
@@ -52,7 +49,7 @@ class Sensor(object):
 class WaterSensor(Sensor):
     def get_values(self):
         self.device_id = '28-00000b6ecdd7'
-        print("Temp for",self.device_id)
+        print("Sending values for",self.device_id,"to",self.feed_names)
 
 class MultiSensor(Sensor):
     pass
@@ -61,12 +58,13 @@ water_sensor = WaterSensor(['watertemp'])
 
 multi_sensor = MultiSensor(['airtemp','pressure','humidity','gas'])
 
-init_adafruit()
+adafruit = Adafruit()
 
-#sensors_discovered = get_all_subclasses(Sensor)
+# get a list of all the sensors
 sensors_discovered = []
 sensors_discovered.append(water_sensor)
 sensors_discovered.append(multi_sensor)
-#sensors_discovered = Sensor.__subclasses__()
+
 for sensor in sensors_discovered:
     sensor.create_feeds()
+    sensor.get_values()
