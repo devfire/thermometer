@@ -47,9 +47,45 @@ class Sensor(object):
             print("Creating feed",feed)
 
 class WaterSensor(Sensor):
-    def get_values(self):
+    def __init__(self,feed_names):
+        self.feed_names = feed_names
         self.device_id = '28-00000b6ecdd7'
+
+        #root folder where all the devices live
+        self.base_dir = '/sys/bus/w1/devices/'
+
+        self.device_folder = glob.glob(self.base_dir + self.device_id)[0]
+        self.device_file = self.device_folder + '/w1_slave'
+
+    #read_temp_raw fetches the two lines of the message from the interface.
+    def read_temp_raw(self):
+        try:
+            f = open(self.device_file, 'r')
+        except:
+            print("Failed to open",self.device_file,"for reading. Exiting.")
+            exit(1)
+        lines = f.readlines()
+        f.close()
+        return lines
+
+    '''
+    The read_temp function wraps read_temp_raw, checking for bad messages and retrying 
+    until it gets a message with 'YES' on end of the first line. 
+    The function returns two values, the first being the temperature in degrees C and the second in degree F.
+    '''
+    def get_values(self):
         print("Sending values for",self.device_id,"to",self.feed_names)
+        lines = self.read_temp_raw()
+        while lines[0].strip()[-3:] != 'YES':
+            time.sleep(0.2)
+            lines = __read_temp_raw()
+        equals_pos = lines[1].find('t=')
+        if equals_pos != -1:
+            temp_string = lines[1][equals_pos+2:]
+            temp_c = float(temp_string) / 1000.0
+            temp_f = temp_c * 9.0 / 5.0 + 32.0
+            #return temp_c, temp_f
+            return round(temp_f,2)
 
 class MultiSensor(Sensor):
     pass
@@ -67,4 +103,4 @@ sensors_discovered.append(multi_sensor)
 
 for sensor in sensors_discovered:
     sensor.create_feeds()
-    sensor.get_values()
+    print("Received",sensor.get_values(),"for",sensor.feed_names)
