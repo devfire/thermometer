@@ -34,6 +34,9 @@ class Adafruit(object):
 
     def get_mqtt_client():
         return self.mqtt_client
+    
+    def publish(self,feed,value):
+        print('Sending',value,'to',feed,'feed')
 
 class Sensor(object):
     def __init__(self,feed_names):
@@ -44,7 +47,8 @@ class Sensor(object):
 
     def create_feeds(self):
         for feed in self.feed_names:
-            print("Creating feed",feed)
+            pass
+            #print("Creating feed",feed)
 
 class WaterSensor(Sensor):
     def __init__(self,feed_names):
@@ -74,7 +78,7 @@ class WaterSensor(Sensor):
     The function returns two values, the first being the temperature in degrees C and the second in degree F.
     '''
     def get_values(self):
-        print("Sending values for",self.device_id,"to",self.feed_names)
+        #print("Sending values for",self.device_id,"to",self.feed_names)
         lines = self.read_temp_raw()
         while lines[0].strip()[-3:] != 'YES':
             time.sleep(0.2)
@@ -85,22 +89,35 @@ class WaterSensor(Sensor):
             temp_c = float(temp_string) / 1000.0
             temp_f = temp_c * 9.0 / 5.0 + 32.0
             #return temp_c, temp_f
-            return round(temp_f,2)
+
+            #init an empty dictionary
+            sensor_values = {}
+
+            #assign a value to the feed
+            sensor_values[self.feed_names[0]] = round(temp_f,2)
+
+            #print('Returning',sensor_values)
+            #return [round(temp_f,2)]
+            return sensor_values
 
 class MultiSensor(Sensor):
     pass
 
+# setup a list of available readings
 water_sensor = WaterSensor(['watertemp'])
-
 multi_sensor = MultiSensor(['airtemp','pressure','humidity','gas'])
 
+# init the IoT cloud connection object
 adafruit = Adafruit()
 
-# get a list of all the sensors
+# create a list of all the sensors
 sensors_discovered = []
 sensors_discovered.append(water_sensor)
-sensors_discovered.append(multi_sensor)
+#sensors_discovered.append(multi_sensor)
 
 for sensor in sensors_discovered:
-    sensor.create_feeds()
-    print("Received",sensor.get_values(),"for",sensor.feed_names)
+    #sensor.create_feeds()
+    #print('Got back',sensor.get_values())
+    current_value_dict = sensor.get_values()
+    for feed in current_value_dict:
+        print(f"Sending {current_value_dict[feed]} to {feed}")
