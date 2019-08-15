@@ -2,6 +2,9 @@ import glob
 import time
 import sys, os
 import pprint
+import board
+from busio import I2C
+import adafruit_bme680
 from Adafruit_IO import MQTTClient, Client, RequestError, Feed
 
 class Adafruit(object):
@@ -51,8 +54,8 @@ class Sensor(object):
             #print("Creating feed",feed)
 
 class WaterSensor(Sensor):
-    def __init__(self,feed_names):
-        self.feed_names = feed_names
+    def __init__(self,feed_names_watersensor):
+        self.feed_names = feed_names_watersensor
         self.device_id = '28-00000b6ecdd7'
 
         #root folder where all the devices live
@@ -96,16 +99,34 @@ class WaterSensor(Sensor):
             #assign a value to the feed
             sensor_values[self.feed_names[0]] = round(temp_f,2)
 
-            #print('Returning',sensor_values)
             #return [round(temp_f,2)]
+            #this will return a dictionary of "feed_name":"value"
             return sensor_values
 
 class MultiSensor(Sensor):
-    pass
+    def __init__(self,feed_names_multisensor):
+        self.feed_names = feed_names_multisensor
+        print("Creating multisensor with",self.feed_names,"names")
+
+        # Create library object using our Bus I2C port
+        self.i2c = I2C(board.SCL, board.SDA)
+        self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(self.i2c, debug=False)
+
+        # change this to match the location's pressure (hPa) at sea level
+        self.bme680.sea_level_pressure = 1013.25
+
+    def get_values(self):
+        sensor_values = {}
+        for sensor_reading in self.feed_names:
+            reading = getattr(self.bme680,sensor_reading)
+            sensor_values[sensor_reading] = reading
+
+        return sensor_values
+
 
 # setup a list of available readings
 water_sensor = WaterSensor(['watertemp'])
-multi_sensor = MultiSensor(['airtemp','pressure','humidity','gas'])
+multi_sensor = MultiSensor(['temperature','pressure','humidity','gas'])
 
 # init the IoT cloud connection object
 adafruit = Adafruit()
@@ -113,11 +134,15 @@ adafruit = Adafruit()
 # create a list of all the sensors
 sensors_discovered = []
 sensors_discovered.append(water_sensor)
-#sensors_discovered.append(multi_sensor)
+sensors_discovered.append(multi_sensor)
 
 for sensor in sensors_discovered:
-    #sensor.create_feeds()
-    #print('Got back',sensor.get_values())
+    #first, lets make sure the feeds exist
+    sensor.create_feeds()
+
+    '''ok, the feeds have been created, let's get the values
+    current_value_dict will contain a {"feed name":"feed value"}
+    '''
     current_value_dict = sensor.get_values()
     for feed in current_value_dict:
         print(f"Sending {current_value_dict[feed]} to {feed}")
