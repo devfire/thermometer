@@ -45,6 +45,7 @@ class Sensor(object):
     def __init__(self,feed_names):
         self.feed_names = feed_names
 
+    # empty method. Subclasses implement this for real.
     def get_values(self):
         pass
 
@@ -79,6 +80,7 @@ class WaterSensor(Sensor):
     The read_temp function wraps read_temp_raw, checking for bad messages and retrying 
     until it gets a message with 'YES' on end of the first line. 
     The function returns two values, the first being the temperature in degrees C and the second in degree F.
+    NOTE: disabled two values, only returning F for now.
     '''
     def get_values(self):
         #print("Sending values for",self.device_id,"to",self.feed_names)
@@ -106,20 +108,36 @@ class WaterSensor(Sensor):
 class MultiSensor(Sensor):
     def __init__(self,feed_names_multisensor):
         self.feed_names = feed_names_multisensor
-        print("Creating multisensor with",self.feed_names,"names")
+        #print("Creating multisensor with",self.feed_names,"names")
 
         # Create library object using our Bus I2C port
         self.i2c = I2C(board.SCL, board.SDA)
         self.bme680 = adafruit_bme680.Adafruit_BME680_I2C(self.i2c, debug=False)
 
         # change this to match the location's pressure (hPa) at sea level
-        self.bme680.sea_level_pressure = 1013.25
+        self.bme680.sea_level_pressure = 1013.25 # Raleigh value
 
     def get_values(self):
+        '''init the dict to an empty value.
+        This houses the dictionary that will be returned.
+        '''
         sensor_values = {}
+        '''this iterates over all the feed names.
+        For example, if an instance is given temperature,pressure,humidity,gas
+        it will iterate over all of these.
+        NOTE: the names must match the sensor instance attributes, o/w this will not work.
+        '''
         for sensor_reading in self.feed_names:
+            '''getattr(object, name[, default])
+            Return the value of the named attribute of object. 
+            Name must be a string. If the string is the name of one of the object’s attributes, 
+            the result is the value of that attribute.
+            '''
             reading = getattr(self.bme680,sensor_reading)
-            sensor_values[sensor_reading] = reading
+
+            # build up the dict with the feed_name | sensor reading key-value pair
+            # round down to 2 decimal places
+            sensor_values[sensor_reading] = round(reading,2)
 
         return sensor_values
 
