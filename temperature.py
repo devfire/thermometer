@@ -31,32 +31,34 @@ class Adafruit(object):
 
         # Create an MQTT client instance. This is for sending data
         self.mqtt_client = MQTTClient(self.ADAFRUIT_IO_USERNAME, self.ADAFRUIT_IO_KEY)
+        self.mqtt_client.connect()
 
-    def get_http_client():
+    def get_http_client(self):
         return self.http_client
 
-    def get_mqtt_client():
+    def get_mqtt_client(self):
         return self.mqtt_client
     
-    def publish(self,feed,value):
-        print('Sending',value,'to',feed,'feed')
+    def publish(self,feed_name,value):
+        self.mqtt_client.publish(feed_name,value)
 
 class Sensor(object):
-    def __init__(self,feed_names):
-        self.feed_names = feed_names
+    def __init__(self,feed_name):
+        self.feed_name = feed_name
 
-    # empty method. Subclasses implement this for real.
-    def get_values(self):
-        pass
+    def create_feed(self):
+        adafruit_http_client = adafruit.get_http_client()
 
-    def create_feeds(self):
-        for feed in self.feed_names:
-            pass
-            #print("Creating feed",feed)
+        try:
+            self.feed = adafruit_http_client.feeds(sensor.feed_name)
+        except RequestError:
+            self.feed = Feed(name=sensor.feed_name)
+            sensor.temperature = aio.create_feed(feed)
+            print("Creating feed",self.feed_name)
 
 class WaterSensor(Sensor):
-    def __init__(self,feed_names_watersensor):
-        self.feed_names = feed_names_watersensor
+    def __init__(self,feed_name):
+        self.feed_name = feed_name
         self.device_id = '28-00000b6ecdd7'
 
         #root folder where all the devices live
@@ -82,7 +84,7 @@ class WaterSensor(Sensor):
     The function returns two values, the first being the temperature in degrees C and the second in degree F.
     NOTE: disabled two values, only returning F for now.
     '''
-    def get_values(self):
+    def get_value(self):
         #print("Sending values for",self.device_id,"to",self.feed_names)
         lines = self.read_temp_raw()
         while lines[0].strip()[-3:] != 'YES':
@@ -95,20 +97,15 @@ class WaterSensor(Sensor):
             temp_f = temp_c * 9.0 / 5.0 + 32.0
             #return temp_c, temp_f
 
-            #init an empty dictionary
-            sensor_values = {}
+            #assign a value
+            sensor_value = round(temp_f,2)
 
-            #assign a value to the feed
-            sensor_values[self.feed_names[0]] = round(temp_f,2)
-
-            #return [round(temp_f,2)]
-            #this will return a dictionary of "feed_name":"value"
-            return sensor_values
+            return sensor_value
 
 class MultiSensor(Sensor):
-    def __init__(self,feed_names_multisensor):
-        self.feed_names = feed_names_multisensor
-        #print("Creating multisensor with",self.feed_names,"names")
+    def __init__(self,feed_name):
+        self.feed_name = feed_name
+        print("Creating multisensor with",self.feed_name,"name")
 
         # Create library object using our Bus I2C port
         self.i2c = I2C(board.SCL, board.SDA)
@@ -117,34 +114,25 @@ class MultiSensor(Sensor):
         # change this to match the location's pressure (hPa) at sea level
         self.bme680.sea_level_pressure = 1013.25 # Raleigh value
 
-    def get_values(self):
-        '''init the dict to an empty value.
-        This houses the dictionary that will be returned.
+    def get_value(self):
+        '''getattr(object, name[, default])
+        Return the value of the named attribute of object. 
+        Name must be a string. If the string is the name of one of the object’s attributes, 
+        the result is the value of that attribute.
+
+        Also, round it to 2 decimal points.
         '''
-        sensor_values = {}
-        '''this iterates over all the feed names.
-        For example, if an instance is given temperature,pressure,humidity,gas
-        it will iterate over all of these.
-        NOTE: the names must match the sensor instance attributes, o/w this will not work.
-        '''
-        for sensor_reading in self.feed_names:
-            '''getattr(object, name[, default])
-            Return the value of the named attribute of object. 
-            Name must be a string. If the string is the name of one of the object’s attributes, 
-            the result is the value of that attribute.
-            '''
-            reading = getattr(self.bme680,sensor_reading)
+        self.reading = round(getattr(self.bme680,self.feed_name),2)
 
-            # build up the dict with the feed_name | sensor reading key-value pair
-            # round down to 2 decimal places
-            sensor_values[sensor_reading] = round(reading,2)
-
-        return sensor_values
+        return self.reading
 
 
-# setup a list of available readings
-water_sensor = WaterSensor(['watertemp'])
-multi_sensor = MultiSensor(['temperature','pressure','humidity','gas'])
+# setup a list of available sensors
+water_sensor = WaterSensor('watertemp')
+temperature_sensor = MultiSensor('temperature')
+pressure_sensor = MultiSensor('pressure')
+humidity_sensor = MultiSensor('humidity')
+gas_sensor = MultiSensor('gas')
 
 # init the IoT cloud connection object
 adafruit = Adafruit()
@@ -152,15 +140,18 @@ adafruit = Adafruit()
 # create a list of all the sensors
 sensors_discovered = []
 sensors_discovered.append(water_sensor)
-sensors_discovered.append(multi_sensor)
+sensors_discovered.append(temperature_sensor)
+sensors_discovered.append(pressure_sensor)
+sensors_discovered.append(humidity_sensor)
+sensors_discovered.append(gas_sensor)
 
 for sensor in sensors_discovered:
     #first, lets make sure the feeds exist
-    sensor.create_feeds()
+    #sensor.create_feed()
 
     '''ok, the feeds have been created, let's get the values
     current_value_dict will contain a {"feed name":"feed value"}
     '''
-    current_value_dict = sensor.get_values()
-    for feed in current_value_dict:
-        print(f"Sending {current_value_dict[feed]} to {feed}")
+    current_value = sensor.get_value()
+    print(f"Sending {current_value} to {sensor.feed_name}")
+    adafruit.publish(sensor.feed_name,current_value)
