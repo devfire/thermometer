@@ -23,40 +23,14 @@ class Adafruit(object):
         # Set to your Adafruit IO key.
         self.ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
 
-        '''
-        Create an instance of the REST client. This is needed to setup the feeds only.
-        Data is transferred via MQTT, not via REST.
-        '''
-        self.http_client = Client(self.ADAFRUIT_IO_USERNAME, self.ADAFRUIT_IO_KEY)
-
         # Create an MQTT client instance. This is for sending data
         self.mqtt_client = MQTTClient(self.ADAFRUIT_IO_USERNAME, self.ADAFRUIT_IO_KEY)
         self.mqtt_client.connect()
 
-    def get_http_client(self):
-        return self.http_client
-
-    def get_mqtt_client(self):
-        return self.mqtt_client
-    
     def publish(self,feed_name,value):
         self.mqtt_client.publish(feed_name,value)
 
-class Sensor(object):
-    def __init__(self,feed_name):
-        self.feed_name = feed_name
-
-    def create_feed(self):
-        adafruit_http_client = adafruit.get_http_client()
-
-        try:
-            self.feed = adafruit_http_client.feeds(sensor.feed_name)
-        except RequestError:
-            self.feed = Feed(name=sensor.feed_name)
-            sensor.temperature = aio.create_feed(feed)
-            print("Creating feed",self.feed_name)
-
-class WaterSensor(Sensor):
+class WaterSensor(object):
     def __init__(self,feed_name):
         self.feed_name = feed_name
         self.device_id = '28-00000b6ecdd7'
@@ -85,7 +59,6 @@ class WaterSensor(Sensor):
     NOTE: disabled two values, only returning F for now.
     '''
     def get_value(self):
-        #print("Sending values for",self.device_id,"to",self.feed_names)
         lines = self.read_temp_raw()
         while lines[0].strip()[-3:] != 'YES':
             time.sleep(0.2)
@@ -102,10 +75,9 @@ class WaterSensor(Sensor):
 
             return sensor_value
 
-class MultiSensor(Sensor):
+class MultiSensor(object):
     def __init__(self,feed_name):
         self.feed_name = feed_name
-        print("Creating multisensor with",self.feed_name,"name")
 
         # Create library object using our Bus I2C port
         self.i2c = I2C(board.SCL, board.SDA)
@@ -146,12 +118,6 @@ sensors_discovered.append(humidity_sensor)
 sensors_discovered.append(gas_sensor)
 
 for sensor in sensors_discovered:
-    #first, lets make sure the feeds exist
-    #sensor.create_feed()
-
-    '''ok, the feeds have been created, let's get the values
-    current_value_dict will contain a {"feed name":"feed value"}
-    '''
     current_value = sensor.get_value()
     print(f"Sending {current_value} to {sensor.feed_name}")
     adafruit.publish(sensor.feed_name,current_value)
