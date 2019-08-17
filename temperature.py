@@ -28,6 +28,9 @@ class Adafruit(object):
         self.mqtt_client.connect()
 
     def publish(self,feed_name,value):
+        # convert C to F for ambient temp only
+        if feed_name == 'temperature':
+            value = value * 9.0 / 5.0 + 32.0
         self.mqtt_client.publish(feed_name,value)
 
 class WaterSensor(object):
@@ -87,12 +90,10 @@ class MultiSensor(object):
         self.bme680.sea_level_pressure = 1013.25 # Raleigh value
 
     def get_value(self):
-        '''getattr(object, name[, default])
-        Return the value of the named attribute of object. 
+        '''
+        getattr(object, name[, default]) returns the value of the named attribute of object. 
         Name must be a string. If the string is the name of one of the object’s attributes, 
-        the result is the value of that attribute.
-
-        Also, round it to 2 decimal points.
+        the result is the value of that attribute. Also, round it to 2 decimal points.
         '''
         self.reading = round(getattr(self.bme680,self.feed_name),2)
 
@@ -117,7 +118,9 @@ sensors_discovered.append(pressure_sensor)
 sensors_discovered.append(humidity_sensor)
 sensors_discovered.append(gas_sensor)
 
-for sensor in sensors_discovered:
-    current_value = sensor.get_value()
-    print(f"Sending {current_value} to {sensor.feed_name}")
-    adafruit.publish(sensor.feed_name,current_value)
+while True:
+    for sensor in sensors_discovered:
+        current_value = sensor.get_value()
+        print(f"Sending {current_value} to {sensor.feed_name}")
+        adafruit.publish(sensor.feed_name,current_value)
+    time.sleep(11)
