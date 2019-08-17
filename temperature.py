@@ -76,6 +76,14 @@ class WaterSensor(object):
             return sensor_value
 
 class MultiSensor(object):
+    class _Decorators(object):
+        @classmethod
+        def convert_c_to_f(self,decorated_function):
+            def wrapper_convert_c_to_f(self,*args, **kwargs):
+                print("Converting F to C")
+                return decorated_function(self,*args, **kwargs)
+            return wrapper_convert_c_to_f
+            
     def __init__(self,feed_name):
         self.feed_name = feed_name
 
@@ -86,13 +94,12 @@ class MultiSensor(object):
         # change this to match the location's pressure (hPa) at sea level
         self.bme680.sea_level_pressure = 1013.25 # Raleigh value
 
+    @_Decorators.convert_c_to_f
     def get_value(self):
-        '''getattr(object, name[, default])
-        Return the value of the named attribute of object. 
+        '''
+        getattr(object, name[, default]) returns the value of the named attribute of object. 
         Name must be a string. If the string is the name of one of the object’s attributes, 
-        the result is the value of that attribute.
-
-        Also, round it to 2 decimal points.
+        the result is the value of that attribute. Also, round it to 2 decimal points.
         '''
         self.reading = round(getattr(self.bme680,self.feed_name),2)
 
@@ -117,7 +124,9 @@ sensors_discovered.append(pressure_sensor)
 sensors_discovered.append(humidity_sensor)
 sensors_discovered.append(gas_sensor)
 
-for sensor in sensors_discovered:
-    current_value = sensor.get_value()
-    print(f"Sending {current_value} to {sensor.feed_name}")
-    adafruit.publish(sensor.feed_name,current_value)
+while True:
+    for sensor in sensors_discovered:
+        current_value = sensor.get_value()
+        print(f"Sending {current_value} to {sensor.feed_name}")
+        adafruit.publish(sensor.feed_name,current_value)
+    time.sleep(11)
