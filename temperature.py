@@ -28,6 +28,9 @@ class Adafruit(object):
         self.mqtt_client.connect()
 
     def publish(self,feed_name,value):
+        # convert C to F for ambient temp only
+        if feed_name == 'temperature':
+            value = value * 9.0 / 5.0 + 32.0
         self.mqtt_client.publish(feed_name,value)
 
 class WaterSensor(object):
@@ -76,14 +79,6 @@ class WaterSensor(object):
             return sensor_value
 
 class MultiSensor(object):
-    class _Decorators(object):
-        @classmethod
-        def convert_c_to_f(self,decorated_function):
-            def wrapper_convert_c_to_f(self,*args, **kwargs):
-                print("Converting F to C")
-                return decorated_function(self,*args, **kwargs)
-            return wrapper_convert_c_to_f
-            
     def __init__(self,feed_name):
         self.feed_name = feed_name
 
@@ -94,7 +89,6 @@ class MultiSensor(object):
         # change this to match the location's pressure (hPa) at sea level
         self.bme680.sea_level_pressure = 1013.25 # Raleigh value
 
-    @_Decorators.convert_c_to_f
     def get_value(self):
         '''
         getattr(object, name[, default]) returns the value of the named attribute of object. 
