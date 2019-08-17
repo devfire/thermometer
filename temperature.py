@@ -31,6 +31,8 @@ class Adafruit(object):
         # convert C to F for ambient temp only
         if feed_name == 'temperature':
             value = value * 9.0 / 5.0 + 32.0
+
+        value = round(value,2)
         self.mqtt_client.publish(feed_name,value)
 
 class WaterSensor(object):
@@ -73,10 +75,7 @@ class WaterSensor(object):
             temp_f = temp_c * 9.0 / 5.0 + 32.0
             #return temp_c, temp_f
 
-            #assign a value
-            sensor_value = round(temp_f,2)
-
-            return sensor_value
+            return temp_f
 
 class MultiSensor(object):
     def __init__(self,feed_name):
@@ -95,7 +94,7 @@ class MultiSensor(object):
         Name must be a string. If the string is the name of one of the object’s attributes, 
         the result is the value of that attribute. Also, round it to 2 decimal points.
         '''
-        self.reading = round(getattr(self.bme680,self.feed_name),2)
+        self.reading = getattr(self.bme680,self.feed_name)
 
         return self.reading
 
