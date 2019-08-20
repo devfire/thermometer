@@ -9,7 +9,7 @@ from Adafruit_IO import MQTTClient, Client, RequestError, Feed
 
 class Adafruit(object):
     def __init__(self):
-        # We need to make sure the env vars are set correctly
+        ''' We need to make sure the env vars are set correctly '''
         for env_var in ('ADAFRUIT_IO_USERNAME','ADAFRUIT_IO_KEY'):
             if env_var in os.environ:
                 print("Checking for",env_var,"found it!")
