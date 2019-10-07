@@ -3,29 +3,15 @@ import time
 import sys, os
 import pprint
 import board
+import socket
 from busio import I2C
 import adafruit_bme680
-from Adafruit_IO import MQTTClient, Client, RequestError, Feed
 
-class Adafruit(object):
+class Sender(object):
     def __init__(self):
-        ''' We need to make sure the env vars are set correctly '''
-        for env_var in ('ADAFRUIT_IO_USERNAME','ADAFRUIT_IO_KEY'):
-            if env_var in os.environ:
-                print("Checking for",env_var,"found it!")
-            else:
-                print(env_var,'not found, exiting!')
-                sys.exit(1)
-
-        # Set to your Adafruit IO username.
-        self.ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
-
-        # Set to your Adafruit IO key.
-        self.ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
-
-        # Create an MQTT client instance. This is for sending data
-        self.mqtt_client = MQTTClient(self.ADAFRUIT_IO_USERNAME, self.ADAFRUIT_IO_KEY)
-        self.mqtt_client.connect()
+        self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.host = 'sushi.coontie.com'
+        self.port = '3333'
 
     def publish(self,feed_name,value):
         # convert C to F for ambient temp only
@@ -33,7 +19,12 @@ class Adafruit(object):
             value = value * 9.0 / 5.0 + 32.0
 
         value = round(value,2)
-        self.mqtt_client.publish(feed_name,value)
+        try:
+            client_socket.sendto(value, (host, port))
+        except:
+            sys.exit()
+
+
 
 class WaterSensor(object):
     def __init__(self,feed_name):
@@ -107,7 +98,7 @@ humidity_sensor = MultiSensor('humidity')
 gas_sensor = MultiSensor('gas')
 
 # init the IoT cloud connection object
-adafruit = Adafruit()
+sender = Sender()
 
 # create a list of all the sensors
 sensors_discovered = []
@@ -121,5 +112,5 @@ while True:
     for sensor in sensors_discovered:
         current_value = sensor.get_value()
         print(f"Sending {current_value} to {sensor.feed_name}")
-        adafruit.publish(sensor.feed_name,current_value)
+        sender.publish(sensor.feed_name,current_value)
     time.sleep(11)
