@@ -10,18 +10,18 @@ import adafruit_bme680
 
 class Sender(object):
     def __init__(self):
-        self.mac = str(uuid.getnode())
-
-    def publish(self,feed_name,value):
-        host = '172.16.1.66'
-        port = 3333
-
+        self.host = '172.16.1.66'
+        self.port = 3333
+        
         try:
-            client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         except socket.error:
             print("Failed to create socket, exiting!")
             sys.exit()
 
+        self.mac = str(uuid.getnode())
+
+    def publish(self,feed_name,value):
         # convert C to F for ambient temp only
         if feed_name == 'temperature':
             value = value * 9.0 / 5.0 + 32.0
@@ -35,7 +35,7 @@ class Sender(object):
         value_str = self.mac + ':' + feed_name + ':' + value_str
 
         try:
-            client_socket.sendto(value_str.encode(), (host, port))
+            self.client_socket.sendto(value_str.encode(), (self.host, self.port))
         except OSError as msg: 
             print("Error during send!", msg)
             sys.exit()
