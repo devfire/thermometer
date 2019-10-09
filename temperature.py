@@ -4,12 +4,13 @@ import sys, os
 import pprint
 import board
 import socket
+import uuid
 from busio import I2C
 import adafruit_bme680
 
 class Sender(object):
     def __init__(self):
-        pass
+        self.mac = str(uuid.getnode())
 
     def publish(self,feed_name,value):
         host = '172.16.1.66'
@@ -29,16 +30,17 @@ class Sender(object):
         value = round(value,2)
 
         #convert to a string
-        value = str(value)
+        value_str = str(value)
+
+        value_str = self.mac + ':' + feed_name + ':' + value_str
 
         try:
-            client_socket.sendto(value.encode(), (host, port))
+            client_socket.sendto(value_str.encode(), (host, port))
         except OSError as msg: 
             print("Error during send!", msg)
             sys.exit()
-        client_socket.close()
 
-
+#        client_socket.close()
 
 class WaterSensor(object):
     def __init__(self,feed_name):
