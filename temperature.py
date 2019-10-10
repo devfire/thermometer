@@ -5,20 +5,27 @@ import pprint
 import board
 import socket
 import uuid
+import hashlib
 from busio import I2C
 import adafruit_bme680
 
 class Sender(object):
     def __init__(self):
-        self.host = '172.16.1.66'
+
+        #define the target IP
+        self.host = 'iot.coontie.com'
+
+        #define the target port
         self.port = 3333
         
         try:
+            #attempt to create a socket, exit if failed
             self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         except socket.error:
             print("Failed to create socket, exiting!")
             sys.exit()
 
+        #get the machine MAC address. This is useful to differentiate between the devices.
         self.mac = str(uuid.getnode())
 
     def publish(self,feed_name,value):
@@ -32,15 +39,20 @@ class Sender(object):
         #convert to a string
         value_str = str(value)
 
+        #create a publish string, : separated, with the MAC:feed_name:value triplet
         value_str = self.mac + ':' + feed_name + ':' + value_str
+
+        #create an md5 hash for validation
+        value_md5hash = hashlib.md5(value_str.encode('utf-8')).hexdigest()
+
+        #append the validation hash
+        value_str = value_str + ':' + value_md5hash
 
         try:
             self.client_socket.sendto(value_str.encode(), (self.host, self.port))
         except OSError as msg: 
             print("Error during send!", msg)
             sys.exit()
-
-#        client_socket.close()
 
 class WaterSensor(object):
     def __init__(self,feed_name):
@@ -99,7 +111,7 @@ class MultiSensor(object):
         '''
         getattr(object, name[, default]) returns the value of the named attribute of object. 
         Name must be a string. If the string is the name of one of the object’s attributes, 
-        the result is the value of that attribute. Also, round it to 2 decimal points.
+        the result is the value of that attribute.
         '''
         self.reading = getattr(self.bme680,self.feed_name)
 
@@ -129,4 +141,4 @@ while True:
         current_value = sensor.get_value()
         print(f"Sending {current_value} to {sensor.feed_name}")
         sender.publish(sensor.feed_name,current_value)
-    time.sleep(11)
+    time.sleep(10)
