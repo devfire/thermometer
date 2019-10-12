@@ -4,8 +4,9 @@ import sys, os
 import pprint
 import board
 import socket
-import uuid
+import re,uuid
 import hashlib
+import json
 from busio import I2C
 import adafruit_bme680
 
@@ -13,7 +14,7 @@ class Sender(object):
     def __init__(self):
 
         #define the target IP
-        self.host = 'iot.coontie.com'
+        self.host = 'htpc.coontie.com'
 
         #define the target port
         self.port = 3333
@@ -26,7 +27,7 @@ class Sender(object):
             sys.exit()
 
         #get the machine MAC address. This is useful to differentiate between the devices.
-        self.mac = str(uuid.getnode())
+        self.mac = str(':'.join(re.findall('..', '%012x' % uuid.getnode())))
 
     def publish(self,feed_name,value):
         # convert C to F for ambient temp only
@@ -36,20 +37,11 @@ class Sender(object):
         #round to the nearest 2 digits
         value = round(value,2)
 
-        #convert to a string
-        value_str = str(value)
-
-        #create a publish string, : separated, with the MAC:feed_name:value triplet
-        value_str = self.mac + ':' + feed_name + ':' + value_str
-
-        #create an md5 hash for validation
-        value_md5hash = hashlib.md5(value_str.encode('utf-8')).hexdigest()
-
-        #append the validation hash
-        value_str = value_str + ':' + value_md5hash
+        #get the JSON object ready, make it a string
+        payload_json = json.dumps({'mac':self.mac, 'feedName':feed_name, 'value':value})
 
         try:
-            self.client_socket.sendto(value_str.encode(), (self.host, self.port))
+            self.client_socket.sendto(payload_json.encode(), (self.host, self.port))
         except OSError as msg: 
             print("Error during send!", msg)
             sys.exit()
