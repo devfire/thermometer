@@ -14,7 +14,7 @@ class Sender(object):
     def __init__(self):
 
         #define the target IP
-        self.host = 'htpc.coontie.com'
+        self.host = 'iot.coontie.com'
 
         #define the target port
         self.port = 3333
