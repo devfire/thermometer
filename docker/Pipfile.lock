@@ -1,0 +1,71 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "f1717a0e7e1d1e523b1653228a1ad03356fd46c15b52ac598e86e0b9c67ac1f3"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.6"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "adafruit-blinka": {
+            "hashes": [
+                "sha256:0e0563cb00317838ae970f02becd82407ae80792e22996168665b3d692638d29"
+            ],
+            "index": "pypi",
+            "version": "==3.0.0"
+        },
+        "adafruit-platformdetect": {
+            "hashes": [
+                "sha256:3ea62dad76efb1fee9004fefbe392274c8e86b565cef72ca5fbf768459ee0637"
+            ],
+            "version": "==1.3.4"
+        },
+        "adafruit-pureio": {
+            "hashes": [
+                "sha256:e65cd929f1d8e109513ed1e457c2742bf4f15349c1a9b7f5b1e04191624d7488"
+            ],
+            "version": "==0.2.3"
+        },
+        "board": {
+            "hashes": [
+                "sha256:b97c986d0190a2a5181a7fe28959cd8515520b87f672796e21e1b0d32cc63e2f",
+                "sha256:cd718c3322a126d86455e24ae0cebb59a567cbdbaf03696391dccf88c8f456d6"
+            ],
+            "index": "pypi",
+            "version": "==1.0"
+        },
+        "pprint": {
+            "hashes": [
+                "sha256:c0fa22d1462351671ca098e9779bb26a23880011e93eea5f199a150ee7b92a16"
+            ],
+            "index": "pypi",
+            "version": "==0.1"
+        },
+        "spidev": {
+            "hashes": [
+                "sha256:4314e52f573d95233c907f307558893313a8a606e197e77bb711526b0e179e80"
+            ],
+            "markers": "sys_platform == 'linux'",
+            "version": "==3.4"
+        },
+        "sysv-ipc": {
+            "hashes": [
+                "sha256:b284e961274c67ed3debfdd8a43f197451c5f100955142bbed380258c6c73e06",
+                "sha256:b59fbd42c9de27b42fdda69c4aa7556312112dc6ac7246e44cd875cf049e4273",
+                "sha256:cd70548a92218ede2da499080b31e52f1d7cf60716c5cc7d468ec89e8b73c530"
+            ],
+            "markers": "platform_system != 'Windows'",
+            "version": "==1.0.0"
+        }
+    },
+    "develop": {}
+}
