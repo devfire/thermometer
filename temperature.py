@@ -3,37 +3,48 @@ import time
 import sys, os
 import pprint
 import board
+import socket
+import re,uuid
+import hashlib
+import json
 from busio import I2C
 import adafruit_bme680
-from Adafruit_IO import MQTTClient, Client, RequestError, Feed
 
-class Adafruit(object):
+class Sender(object):
     def __init__(self):
-        ''' We need to make sure the env vars are set correctly '''
-        for env_var in ('ADAFRUIT_IO_USERNAME','ADAFRUIT_IO_KEY'):
-            if env_var in os.environ:
-                print("Checking for",env_var,"found it!")
-            else:
-                print(env_var,'not found, exiting!')
-                sys.exit(1)
 
-        # Set to your Adafruit IO username.
-        self.ADAFRUIT_IO_USERNAME = os.getenv("ADAFRUIT_IO_USERNAME")
+        #define the target IP
+        self.host = 'iot.coontie.com'
 
-        # Set to your Adafruit IO key.
-        self.ADAFRUIT_IO_KEY = os.getenv("ADAFRUIT_IO_KEY")
+        #define the target port
+        self.port = 3333
+        
+        try:
+            #attempt to create a socket, exit if failed
+            self.client_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        except socket.error:
+            print("Failed to create socket, exiting!")
+            sys.exit()
 
-        # Create an MQTT client instance. This is for sending data
-        self.mqtt_client = MQTTClient(self.ADAFRUIT_IO_USERNAME, self.ADAFRUIT_IO_KEY)
-        self.mqtt_client.connect()
+        #get the machine MAC address. This is useful to differentiate between the devices.
+        self.mac = str(':'.join(re.findall('..', '%012x' % uuid.getnode())))
 
     def publish(self,feed_name,value):
         # convert C to F for ambient temp only
         if feed_name == 'temperature':
             value = value * 9.0 / 5.0 + 32.0
 
+        #round to the nearest 2 digits
         value = round(value,2)
-        self.mqtt_client.publish(feed_name,value)
+
+        #get the JSON object ready, make it a string
+        payload_json = json.dumps({'mac':self.mac, 'feedName':feed_name, 'value':value})
+
+        try:
+            self.client_socket.sendto(payload_json.encode(), (self.host, self.port))
+        except OSError as msg: 
+            print("Error during send!", msg)
+            sys.exit()
 
 class WaterSensor(object):
     def __init__(self,feed_name):
@@ -92,7 +103,7 @@ class MultiSensor(object):
         '''
         getattr(object, name[, default]) returns the value of the named attribute of object. 
         Name must be a string. If the string is the name of one of the object’s attributes, 
-        the result is the value of that attribute. Also, round it to 2 decimal points.
+        the result is the value of that attribute.
         '''
         self.reading = getattr(self.bme680,self.feed_name)
 
@@ -107,7 +118,7 @@ humidity_sensor = MultiSensor('humidity')
 gas_sensor = MultiSensor('gas')
 
 # init the IoT cloud connection object
-adafruit = Adafruit()
+sender = Sender()
 
 # create a list of all the sensors
 sensors_discovered = []
@@ -121,5 +132,5 @@ while True:
     for sensor in sensors_discovered:
         current_value = sensor.get_value()
         print(f"Sending {current_value} to {sensor.feed_name}")
-        adafruit.publish(sensor.feed_name,current_value)
-    time.sleep(11)
+        sender.publish(sensor.feed_name,current_value)
+    time.sleep(10)
