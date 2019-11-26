@@ -115,7 +115,7 @@ water_sensor = WaterSensor('watertemp')
 temperature_sensor = MultiSensor('temperature')
 pressure_sensor = MultiSensor('pressure')
 humidity_sensor = MultiSensor('humidity')
-gas_sensor = MultiSensor('gas')
+#gas_sensor = MultiSensor('gas')
 
 # init the IoT cloud connection object
 sender = Sender()
@@ -126,11 +126,11 @@ sensors_discovered.append(water_sensor)
 sensors_discovered.append(temperature_sensor)
 sensors_discovered.append(pressure_sensor)
 sensors_discovered.append(humidity_sensor)
-sensors_discovered.append(gas_sensor)
+#sensors_discovered.append(gas_sensor)
 
 while True:
     for sensor in sensors_discovered:
         current_value = sensor.get_value()
         print(f"Sending {current_value} to {sensor.feed_name}")
         sender.publish(sensor.feed_name,current_value)
-    time.sleep(10)
+    time.sleep(30)
