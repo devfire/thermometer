@@ -111,7 +111,7 @@ class MultiSensor(object):
 
 
 # setup a list of available sensors
-water_sensor = WaterSensor('watertemp')
+# water_sensor = WaterSensor('watertemp')
 temperature_sensor = MultiSensor('temperature')
 pressure_sensor = MultiSensor('pressure')
 humidity_sensor = MultiSensor('humidity')
@@ -122,7 +122,7 @@ sender = Sender()
 
 # create a list of all the sensors
 sensors_discovered = []
-sensors_discovered.append(water_sensor)
+# sensors_discovered.append(water_sensor)
 sensors_discovered.append(temperature_sensor)
 sensors_discovered.append(pressure_sensor)
 sensors_discovered.append(humidity_sensor)
